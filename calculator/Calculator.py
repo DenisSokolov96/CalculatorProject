@@ -1,5 +1,8 @@
 from calculator.opn.OPNCalculation import opn, evaluate_opn, RESERVED_WORDS
-from calculator.utils.CalculationUtils import expression_to_opn
+from calculator.utils.CalculationUtils import expression_to_standard, calculate_formula_Bernoulli, \
+    calculate_arithmetic_progression, calculate_geometric_progression
+
+ENGINE_EVALUATION = {"opn": "Обратная польская нотация", "graph": "Структура граф"}
 
 
 class Calculator:
@@ -9,16 +12,33 @@ class Calculator:
         self.history_expression = []
         self.user_expression = {}
         self.expression = ""
+        self.engine_evaluation = ENGINE_EVALUATION["opn"]
         self.clear()
 
     def set_expression(self, text: str):
         self.expression = text
 
+    def set_engine(self, engine_key: str):
+        if engine_key in ENGINE_EVALUATION:
+            self.engine_evaluation = engine_key
+
     def clear(self) -> str:
         self.expression = ""
         return self.expression
 
-    def save_variable_opn(self, name: str, value: str) -> bool:
+    def _calculate_by_engine(self, expression_standard: str):
+        match self.engine_evaluation:
+            case "opn":
+                opn_res = opn(expression_standard, self.user_expression)
+                result = str(evaluate_opn(opn_res))
+                return result, opn_res
+            case "graph":
+                result = "Режим графов в разработке"
+                return result, ""
+            case _:
+                raise ValueError("Неизвестный движок вычислений")
+
+    def save_variable(self, name: str, value: str) -> bool:
         """Вычисляет выражение и сохраняет чистый числовой результат в переменную."""
         name = name.strip()
         value = value.strip()
@@ -27,9 +47,8 @@ class Calculator:
         if name in RESERVED_WORDS or name.isdigit():
             return False
         try:
-            expression_for_opn = expression_to_opn(value)
-            opn_res = opn(expression_for_opn, self.user_expression)
-            res = str(evaluate_opn(opn_res))
+            expression_standard = expression_to_standard(value)
+            res, engine_res = self._calculate_by_engine(expression_standard)
             if res.endswith(".0"):
                 res = res[:-2]
             if "Ошибка" not in res and "запрещено" not in res:
@@ -42,20 +61,79 @@ class Calculator:
     def evaluate(self) -> tuple[str, str, str]:
         if not self.expression:
             return "", "", ""
-        expression_for_opn = expression_to_opn(self.expression)
+        expression_standard = expression_to_standard(self.expression)
         try:
-            opn_res = opn(expression_for_opn, self.user_expression)
-            result = str(evaluate_opn(opn_res))
+            result = ""
+            res_transform = ""
+            match self.engine_evaluation:
+                case "opn":
+                    res_transform = opn(expression_standard, self.user_expression)
+                    result = str(evaluate_opn(res_transform))
+                case "graph":
+                    # Заглушка для решения методом графа
+                    result = "Режим графов в разработке"
+                    res_transform = "Режим графов в разработке"
+                case _:
+                    return "Ошибка движка", "", ""
             if result.endswith(".0"):
                 result = result[:-2]
             self.history_expression.append((self.expression, result))
             self.expression = result
             return (result,
                     f"{len(self.history_expression)}) {self.history_expression[-1][0]} = {self.history_expression[-1][1]}",
-                    " ".join(opn_res))
+                    " ".join(res_transform))
         except ZeroDivisionError:
             self.expression = ""
             return "Ошибка: деление на 0", "", ""
         except Exception:
             self.expression = ""
             return "Неизвестная ошибка", "", ""
+
+    def calculate_formula(self, formula, paramInput1, paramInput2, paramInput3, paramInput4) -> tuple[str, str] | None:
+        try:
+            if formula == "Формула Бернулли":
+                n = int(self.user_expression.get(paramInput1, paramInput1))
+                k = int(self.user_expression.get(paramInput2, paramInput2))
+                p = float(self.user_expression.get(paramInput3, paramInput3.replace(',', '.')))
+                err, res = calculate_formula_Bernoulli(n, k, p)
+                res = str(res)
+                if res.endswith(".0"):
+                    res = res[:-2]
+                if err == 1:
+                    self.history_expression.append(res)
+                    history = f"{len(self.history_expression)}) {res}"
+                else:
+                    history = res
+                return res, history
+            elif formula == "Арифметическая прогрессия":
+                a1 = float(self.user_expression.get(paramInput1, paramInput1.replace(',', '.')))
+                d = float(self.user_expression.get(paramInput2, paramInput2.replace(',', '.')))
+                n = int(self.user_expression.get(paramInput3, paramInput3))
+                mode = int(paramInput4)
+                err, res = calculate_arithmetic_progression(a1, d, n, mode)
+                res = str(res)
+                if res.endswith(".0"):
+                    res = res[:-2]
+                if err == 1:
+                    self.history_expression.append(res)
+                    history = f"{len(self.history_expression)}) {res}"
+                else:
+                    history = res
+                return res, history
+            elif formula == "Геометрическая прогрессия":
+                b1 = float(self.user_expression.get(paramInput1, paramInput1.replace(',', '.')))
+                q = float(self.user_expression.get(paramInput2, paramInput2.replace(',', '.')))
+                n = int(self.user_expression.get(paramInput3, paramInput3))
+                mode = int(paramInput4)
+                err, res = calculate_geometric_progression(b1, q, n, mode)
+                res = str(res)
+                if res.endswith(".0"):
+                    res = res[:-2]
+                if err == 1:
+                    self.history_expression.append(res)
+                    history = f"{len(self.history_expression)}) {res}"
+                else:
+                    history = res
+                return res, history
+        except Exception:
+            return "Error", "Ошибка в вычислениях"

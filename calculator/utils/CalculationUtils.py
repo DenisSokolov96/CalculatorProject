@@ -1,7 +1,9 @@
 import math
 
+from calculator.utils.MathUtils import formula_Bernoulli, arithmetic_progression, geometric_progression
 
-def expression_to_opn(expression):
+
+def expression_to_standard(expression):
     if "=" in expression:
         expression = expression.replace("=", "")
     return expression
@@ -88,3 +90,34 @@ def eval_trig_func(symbol, stack_res):
         stack_res.append(a)
         return "not found"
     return "ok"
+
+
+def calculate_formula_Bernoulli(n, k, p) -> tuple[int, str]:
+    if not (0 <= p <= 1):
+        return 0, "Вероятность p должна быть от 0 до 1"
+    if k > n:
+        return 0, "k не может быть больше n"
+    if n < 0 or k < 0:
+        return 0, "Параметры n и k должны быть положительными"
+    res = formula_Bernoulli(n, k, p)
+    return 1, f"P_{n}({k}) = {res:.5f} -> {res * 100:.2f}%"
+
+
+def calculate_arithmetic_progression(a1, d, n, mode) -> tuple[int, str]:
+    if n <= 0:
+        return 0, "Номер n должен быть больше 0"
+    res = arithmetic_progression(a1, d, n, mode)
+    if res != -1:
+        return 1, res
+    else:
+        return 0, "Ошибка в параметрах"
+
+
+def calculate_geometric_progression(b1, q, n, mode) -> tuple[int, str]:
+    if n <= 0:
+        return 0, "Номер n должен быть больше 0"
+    res = geometric_progression(b1, q, n, mode)
+    if res != -1:
+        return 1, res
+    else:
+        return 0, "Ошибка в параметрах"
