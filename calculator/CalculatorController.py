@@ -1,6 +1,6 @@
-from PyQt5 import QtWidgets, uic
-from PyQt5.QtCore import QPropertyAnimation, QEasingCurve, QParallelAnimationGroup
-from PyQt5.QtGui import QIcon
+from PyQt6 import QtWidgets, uic
+from PyQt6.QtCore import QPropertyAnimation, QEasingCurve, QParallelAnimationGroup
+from PyQt6.QtGui import QIcon
 
 from calculator.Calculator import Calculator, ENGINE_EVALUATION
 
@@ -109,10 +109,10 @@ class CalculatorController(QtWidgets.QMainWindow):
         panel_target_width = 300  # Ширина выезжающей панели
         self.side_panel_anim = QPropertyAnimation(self.formulaPanel, b"maximumWidth")
         self.side_panel_anim.setDuration(250)
-        self.side_panel_anim.setEasingCurve(QEasingCurve.InOutQuad)
+        self.side_panel_anim.setEasingCurve(QEasingCurve.Type.InOutQuad)
         self.side_window_anim = QPropertyAnimation(self, b"geometry")
         self.side_window_anim.setDuration(250)
-        self.side_window_anim.setEasingCurve(QEasingCurve.InOutQuad)
+        self.side_window_anim.setEasingCurve(QEasingCurve.Type.InOutQuad)
         current_geo = self.geometry()
         if self.formula_panel_expanded:
             self.side_panel_anim.setStartValue(panel_target_width)
@@ -144,10 +144,10 @@ class CalculatorController(QtWidgets.QMainWindow):
         panel_height = 170
         self.panel_anim = QPropertyAnimation(self.extraButtonsPanel, b"maximumHeight")
         self.panel_anim.setDuration(300)
-        self.panel_anim.setEasingCurve(QEasingCurve.InOutQuad)
+        self.panel_anim.setEasingCurve(QEasingCurve.Type.InOutQuad)
         self.window_anim = QPropertyAnimation(self, b"geometry")
         self.window_anim.setDuration(300)
-        self.window_anim.setEasingCurve(QEasingCurve.InOutQuad)
+        self.window_anim.setEasingCurve(QEasingCurve.Type.InOutQuad)
         if self.panel_expanded:
             self.panel_anim.setStartValue(panel_height)
             self.panel_anim.setEndValue(0)
