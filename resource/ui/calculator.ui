@@ -555,6 +555,63 @@
         </widget>
        </item>
        <item>
+        <widget class="QFrame" name="plotSettingsFrame">
+         <property name="styleSheet">
+          <string>QFrame { background-color: #f5f6f8; border: 1px solid #dcdcdc; border-radius: 4px; padding: 2px; }</string>
+         </property>
+         <layout class="QVBoxLayout" name="plotSettingsLayout">
+          <property name="spacing">
+           <number>6</number>
+          </property>
+          <item>
+           <widget class="QLabel" name="plotSettingsLabel">
+            <property name="styleSheet">
+             <string>font-size: 11px; color: #7f8c8d;</string>
+            </property>
+            <property name="text">
+             <string>Параметры графика:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="rangeLayout">
+            <item>
+             <widget class="QLineEdit" name="plotMinXInput">
+              <property name="placeholderText">
+               <string>Мин. X</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="plotMaxXInput">
+              <property name="placeholderText">
+               <string>Макс. X</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="plotStepInput">
+            <property name="placeholderText">
+             <string>Шаг точек (например, 0.1)</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="buildPlotBtn">
+            <property name="styleSheet">
+             <string>QPushButton { background-color: #3498db; color: white; font-weight: bold; min-height: 28px; } QPushButton:hover { background-color: #2980b9; }</string>
+            </property>
+            <property name="text">
+             <string>Построить график</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
         <spacer name="verticalSpacer">
          <property name="orientation">
           <enum>Qt::Vertical</enum>

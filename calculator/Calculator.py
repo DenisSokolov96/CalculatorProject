@@ -1,3 +1,5 @@
+import numpy as np
+
 from calculator.opn.OPNCalculation import opn, evaluate_opn, RESERVED_WORDS
 from calculator.utils.CalculationUtils import expression_to_standard, calculate_formula_Bernoulli, \
     calculate_arithmetic_progression, calculate_geometric_progression
@@ -137,3 +139,48 @@ class Calculator:
                 return res, history
         except Exception:
             return "Error", "Ошибка в вычислениях"
+
+    def evaluate_isolated(self, expr_str: str) -> float:
+        """
+        Вычисляет изолированное выражение (например, точку для графика),
+        НЕ изменяя историю калькулятора и его текущее состояние выражения.
+        Возвращает чистый float или np.nan в случае ошибки.
+        """
+        if not expr_str:
+            return np.nan
+        try:
+            expression_standard = expression_to_standard(expr_str)
+            res_str, _ = self._calculate_by_engine(expression_standard)
+            if "Ошибка" in res_str or "запрещено" in res_str:
+                return np.nan
+            return float(res_str)
+        except (ZeroDivisionError, ValueError, KeyError):
+            return np.nan
+        except Exception:
+            return np.nan
+
+    def calculate_plot_data(self, expr: str, min_x: float, max_x: float, step: float) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Генерирует массивы точек X и Y для построения графика.
+        Автоматически адаптирует расчеты под текущий движок (ОПН или Граф).
+        """
+        x_array = np.arange(min_x, max_x + step, step)
+        y_array = []
+        match self.engine_evaluation:
+            case "opn":
+                for x_val in x_array:
+                    x_in_degrees = np.degrees(x_val)
+                    if abs(x_in_degrees) < 1e-9:
+                        current_expr = expr.lower().replace('x', '0')
+                    else:
+                        current_expr = expr.lower().replace('x', f"({x_in_degrees})")
+                    result_float = self.evaluate_isolated(current_expr)
+                    y_array.append(result_float)
+            case "graph":
+                y_array = [0.0] * len(x_array)
+
+            case _:
+                raise ValueError("Неизвестный движок вычислений")
+        y_array = np.array(y_array, dtype=float)
+        y_masked = np.ma.masked_invalid(y_array)
+        return x_array, y_masked

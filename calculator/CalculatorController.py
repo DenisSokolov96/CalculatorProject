@@ -1,8 +1,10 @@
-from PyQt6 import QtWidgets, uic
+from PyQt6 import QtWidgets, uic, sip
 from PyQt6.QtCore import QPropertyAnimation, QEasingCurve, QParallelAnimationGroup
 from PyQt6.QtGui import QIcon
 
 from calculator.Calculator import Calculator, ENGINE_EVALUATION
+from calculator.utils.CalculationUtils import generate_color
+from calculator.utils.PlotWindow import PlotWindow
 
 
 class CalculatorController(QtWidgets.QMainWindow):
@@ -11,6 +13,7 @@ class CalculatorController(QtWidgets.QMainWindow):
         self.group_anim = None
         self.window_anim = None
         self.panel_anim = None
+        self.opened_plots = []
         uic.loadUi("resource/ui/calculator.ui", self)
         self.setWindowIcon(QIcon("resource/ui/img/calculator.png"))
         self.calculator = Calculator()
@@ -42,6 +45,7 @@ class CalculatorController(QtWidgets.QMainWindow):
         self.calcFormulaBtn.clicked.connect(self.on_calculate_formula)
         self.formulaSelectBox.currentIndexChanged.connect(self.update_formula_inputs)
         self.update_formula_inputs()
+        self.buildPlotBtn.clicked.connect(self.on_build_plot_click)
 
     def on_engine_change(self):
         """Вызывается при смене метода решения в QComboBox"""
@@ -202,3 +206,41 @@ class CalculatorController(QtWidgets.QMainWindow):
         self.evalInput.clear()
         self.insert_text_history_in_begin("Созданные переменные удалены")
         self.statusbar.showMessage(f"Созданные переменные удалены", 3000)
+
+    def on_build_plot_click(self):
+        """Вызывается при клике на 'Построить график'. Тонкий контроллер."""
+        expr = self.expressionInput.text().strip()
+        if not expr:
+            self.statusbar.showMessage("Введите математическое выражение в главное поле ввода!", 4000)
+            return
+        try:
+            min_x = float(self.plotMinXInput.text()) if self.plotMinXInput.text() else -10.0
+            max_x = float(self.plotMaxXInput.text()) if self.plotMaxXInput.text() else 10.0
+            if min_x >= max_x:
+                self.statusbar.showMessage("Ошибка: Минимум X должен быть меньше Максимума X!", 4000)
+                return
+
+            if self.plotStepInput.text():
+                step = float(self.plotStepInput.text().replace(",", "."))
+                if step <= 0:
+                    self.statusbar.showMessage("Ошибка: Шаг должен быть больше 0!", 4000)
+                    return
+            else:
+                step = (max_x - min_x) / 500
+        except ValueError:
+            self.statusbar.showMessage("Заполняйте поля границ и шага только числами!", 4000)
+            return
+        try:
+            x_array, y_masked = self.calculator.calculate_plot_data(expr, min_x, max_x, step)
+        except Exception as e:
+            self.statusbar.showMessage(f"Ошибка при расчете точек: {str(e)}", 5000)
+            return
+        new_plot = PlotWindow()
+        new_plot.draw_plot(x_array, y_masked, expr, min_x, max_x, generate_color())
+        self.opened_plots = [
+            win for win in self.opened_plots
+            if not sip.isdeleted(win) and win.isVisible()
+        ]
+        self.opened_plots.append(new_plot)
+        new_plot.show()
+        self.statusbar.showMessage("График успешно открыт в отдельном окне", 3000)

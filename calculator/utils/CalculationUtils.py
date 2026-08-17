@@ -1,3 +1,5 @@
+import random
+
 import math
 
 from calculator.utils.MathUtils import formula_Bernoulli, arithmetic_progression, geometric_progression
@@ -121,3 +123,9 @@ def calculate_geometric_progression(b1, q, n, mode) -> tuple[int, str]:
         return 1, res
     else:
         return 0, "Ошибка в параметрах"
+
+def generate_color():
+    r = random.randint(0, 200)
+    g = random.randint(0, 200)
+    b = random.randint(0, 200)
+    return f"#{r:02x}{g:02x}{b:02x}"
