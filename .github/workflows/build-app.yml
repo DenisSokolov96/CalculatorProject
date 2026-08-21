@@ -1,0 +1,113 @@
+name: Build Desktop Apps (Win & Linux Archives)
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    name: Build for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    permissions:
+      contents: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+
+    - name: Install system dependencies (for Linux GUI)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libegl1 libgl1 libxkbcommon-x11-0 libxcb-cursor0
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller pillow
+        pip install -r requirements.txt
+
+    # Сборка под WINDOWS (Автоматический мультиразмерный ICO)
+    - name: Build Windows App Package
+      if: matrix.os == 'windows-latest'
+      shell: bash
+      run: |
+        python -c "from PIL import Image; img = Image.open('resource/ui/img/calculator.png'); img.save('resource/ui/img/calculator.ico', format='ICO', bitmap_format='bmp', sizes=[(16, 16), (32, 32), (48, 48), (64, 64), (96, 96), (128, 128), (256, 256)])"
+        pyinstaller --noconsole --onefile --name "Calculator" --icon="resource/ui/img/calculator.ico" --add-data "resource;resource" MainController.py
+        cd dist
+        powershell Compress-Archive -Path Calculator.exe -DestinationPath Calculator-Windows.zip
+
+    # Сборка под LINUX (Формируем AppDir и собираем в один AppImage)
+    - name: Build Linux App Package
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        # 1. Компилируем приложение с помощью PyInstaller
+        pyinstaller --noconsole --onefile --name "Calculator" --add-data "resource:resource" MainController.py
+        
+        # 2. Создаем структуру AppDir
+        mkdir -p AppDir/usr/bin
+        mkdir -p AppDir/usr/share/applications
+        mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+        
+        # 3. Переносим бинарник в AppDir
+        cp dist/Calculator AppDir/usr/bin/Calculator
+        
+        # 4. Копируем иконку
+        cp resource/ui/img/calculator.png AppDir/calculator.png
+        cp resource/ui/img/calculator.png AppDir/usr/share/icons/hicolor/256x256/apps/calculator.png
+        
+        # 5. Генерируем .desktop ярлык внутри AppDir (ИСПРАВЛЕНО: Имя файла совпадает с Exec)
+        cat <<EOF > AppDir/Calculator.desktop
+        [Desktop Entry]
+        Type=Application
+        Name=Engineering Calculator
+        Exec=Calculator
+        Icon=calculator
+        Terminal=false
+        Categories=Utility;
+        EOF
+        
+        # 6. Создаем AppRun
+        cat <<'EOF' > AppDir/AppRun
+        #!/bin/sh
+        SELF=$(dirname "$(readlink -f "$0")")
+        exec "$SELF/usr/bin/Calculator" "$@"
+        EOF
+        chmod +x AppDir/AppRun
+        
+        # 7. Скачиваем официальный appimagetool (Прямая ссылка зафиксирована)
+        curl -L -o appimagetool-x86_64.AppImage https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+        chmod +x appimagetool-x86_64.AppImage
+        
+        # 8. Собираем финальный AppImage
+        export ARCH=x86_64
+        ./appimagetool-x86_64.AppImage --appimage-extract-and-run AppDir Calculator-Linux.AppImage
+
+    # Загрузка Windows архива
+    - name: Upload Windows Asset
+      if: matrix.os == 'windows-latest'
+      uses: softprops/action-gh-release@v2
+      with:
+        files: dist/Calculator-Windows.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    # Загрузка Linux AppImage
+    - name: Upload Linux Asset
+      if: matrix.os == 'ubuntu-latest'
+      uses: softprops/action-gh-release@v2
+      with:
+        files: Calculator-Linux.AppImage
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

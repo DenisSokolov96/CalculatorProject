@@ -5,6 +5,8 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 
+from calculator.utils.PathUtils import get_resource_path
+
 
 class PlotWindow(QDialog):
     """Отдельное всплывающее окно для полноэкранного отображения графика"""
@@ -12,7 +14,7 @@ class PlotWindow(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Визуализация графика функции")
-        self.setWindowIcon(QIcon("resource/ui/img/calculator.png"))
+        self.setWindowIcon(QIcon(get_resource_path("resource/ui/img/calculator.png")))
         self.resize(750, 500)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(10, 10, 10, 10)

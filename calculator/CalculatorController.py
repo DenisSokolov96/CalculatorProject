@@ -4,6 +4,7 @@ from PyQt6.QtGui import QIcon
 
 from calculator.Calculator import Calculator, ENGINE_EVALUATION
 from calculator.utils.CalculationUtils import generate_color
+from calculator.utils.PathUtils import get_resource_path
 from calculator.utils.PlotWindow import PlotWindow
 
 
@@ -14,8 +15,8 @@ class CalculatorController(QtWidgets.QMainWindow):
         self.window_anim = None
         self.panel_anim = None
         self.opened_plots = []
-        uic.loadUi("resource/ui/calculator.ui", self)
-        self.setWindowIcon(QIcon("resource/ui/img/calculator.png"))
+        uic.loadUi(get_resource_path("resource/ui/calculator.ui"), self)
+        self.setWindowIcon(QIcon(get_resource_path("resource/ui/img/calculator.png")))
         self.calculator = Calculator()
         self.engineComboBox.addItems(ENGINE_EVALUATION.values())
         self.engineComboBox.currentIndexChanged.connect(self.on_engine_change)
